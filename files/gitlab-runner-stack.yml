@@ -1,0 +1,79 @@
+---
+heat_template_version: newton
+
+description: >
+  GitLab runner stack with one VM and one volume.
+
+parameters:
+  env_name:
+    description: >
+      A name for this runner environment to be used for filtering by a dynamic
+      inventory script and as a name for the runner VM.
+    type: string
+  runner_vm_image:
+    description: >
+      The name or ID of the image to use for the runner VM.
+    type: string
+  runner_vm_flavor:
+    description: >
+      The flavor to use for the runner VM.
+    type: string
+  runner_vm_network:
+    description: >
+      Which existing network the runner VM should be connected to.
+    type: string
+  key_name:
+    description: >
+      Which SSH public key to place on the runner VM.
+    type: string
+  secgroup_runner_vm_rules:
+    description: >
+      Rules for the runner VM security group.
+    type: json
+  volume_runner_vm_size:
+    description: >
+      How big the volume attached to the runner VM should be.
+    type: string
+
+resources:
+
+  runner_vm:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: env_name }
+      image: { get_param: runner_vm_image }
+      flavor: { get_param: runner_vm_flavor }
+      networks:
+        - network: { get_param: runner_vm_network }
+      metadata:
+        group: "runner"
+        stack: { get_param: env_name }
+      key_name: { get_param: key_name }
+      security_groups:
+        - { get_resource: secgroup_runner_vm }
+
+  secgroup_runner_vm:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name:
+        str_replace:
+          template: env_name-name_suffix
+          params:
+            env_name: { get_param: env_name }
+            name_suffix: "secgroup"
+      rules: { get_param: secgroup_runner_vm_rules }
+
+  volume_runner_vm:
+    type: OS::Cinder::Volume
+    properties:
+      name:
+        list_join: ['-', [{ get_param: env_name }, "volume"]]
+      size: { get_param: volume_runner_vm_size }
+
+  volume_attachment_runner_vm:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: runner_vm }
+      volume_id: { get_resource: volume_runner_vm }
+
+outputs:

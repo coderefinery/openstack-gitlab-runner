@@ -1,0 +1,25 @@
+---
+- hosts: runner
+  gather_facts: no
+  ignore_errors: yes
+  tasks:
+    - name: unregister runners
+      shell: >
+        docker exec gitlab-runner-{{ item.RUNNER_NAME }}
+        gitlab-ci-multi-runner unregister -n {{ item.RUNNER_NAME }}
+      with_items: "{{ runner_configs }}"
+      when: item.state == "started"
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: disassociate floating ip from runner VM
+      os_floating_ip:
+        server: "{{ env_name }}"
+        floating_ip_address: "{{ runner_public_ip }}"
+        state: absent
+    - name: remove runner stack
+      os_stack:
+        name: "{{ env_name }}"
+        state: absent

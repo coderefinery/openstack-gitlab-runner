@@ -1,0 +1,41 @@
+---
+- hosts: localhost
+  gather_facts: no
+  connection: local
+  tasks:
+    - name: Build runner Heat stack
+      os_stack:
+        name: "{{ env_name|default('gitlab-runner') }}"
+        state: present
+        template: "files/gitlab-runner-stack.yml"
+        wait: yes
+        parameters:
+          env_name: "{{ env_name|default('gitlab-runner') }}"
+          runner_vm_image: "{{ runner_vm_image|default('CentOS-7') }}"
+          runner_vm_flavor: "{{ runner_vm_flavor|default('standard.tiny') }}"
+          runner_vm_network: "{{ runner_vm_network }}"
+          key_name: "{{ key_name }}"
+          secgroup_runner_vm_rules: "{{ secgroup_runner_vm_rules }}"
+          volume_runner_vm_size: "{{ volume_runner_vm_size }}"
+    - name: Associate floating IP with runner VM
+      os_floating_ip:
+        server: "{{ env_name }}"
+        floating_ip_address: "{{ runner_public_ip }}"
+    - name: Refresh dynamic inventory
+      meta: refresh_inventory
+
+- hosts: runner
+  gather_facts: no
+  tasks:
+    - name: Wait for SSH to work
+      shell: ssh {{ ansible_ssh_user }}@{{ ansible_ssh_host }} 'echo success'
+      register: result
+      until: result.stdout.find('success') != -1
+      retries: 30
+      delay: 5
+      changed_when: false
+      delegate_to: localhost
+
+- hosts: runner
+  roles:
+    - gitlab-runner
