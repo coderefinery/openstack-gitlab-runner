@@ -1,0 +1,4 @@
+---
+- src: https://github.com/coderefinery/gitlab-runner.git
+  scm: git
+  path: roles
