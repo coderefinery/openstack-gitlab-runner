@@ -38,4 +38,5 @@
 
 - hosts: runner
   roles:
+    - ansible-role-users
     - gitlab-runner
