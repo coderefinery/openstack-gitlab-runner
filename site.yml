@@ -17,6 +17,10 @@
           key_name: "{{ key_name }}"
           secgroup_runner_vm_rules: "{{ secgroup_runner_vm_rules }}"
           volume_runner_vm_size: "{{ volume_runner_vm_size }}"
+          runner_ssh_key_rsa_private: "{{ ssh_key_rsa_private|default('') }}"
+          runner_ssh_key_rsa_public: "{{ ssh_key_rsa_public|default('') }}"
+          runner_ssh_key_ecdsa_private: "{{ ssh_key_ecdsa_private|default('') }}"
+          runner_ssh_key_ecdsa_public: "{{ ssh_key_ecdsa_public|default('') }}"
     - name: Associate floating IP with runner VM
       os_floating_ip:
         server: "{{ env_name }}"
