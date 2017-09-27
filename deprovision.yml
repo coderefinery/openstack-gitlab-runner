@@ -2,13 +2,12 @@
 - hosts: runner
   gather_facts: no
   ignore_errors: yes
+  become: yes
   tasks:
     - name: unregister runners
       shell: >
-        docker exec gitlab-runner-{{ item.RUNNER_NAME }}
-        gitlab-ci-multi-runner unregister -n {{ item.RUNNER_NAME }}
-      with_items: "{{ runner_configs }}"
-      when: item.state == "started"
+        docker exec gitlab-multirunner
+        gitlab-ci-multi-runner unregister --all-runners
 
 - hosts: localhost
   connection: local

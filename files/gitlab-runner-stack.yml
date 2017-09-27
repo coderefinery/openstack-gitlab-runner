@@ -34,8 +34,39 @@ parameters:
     description: >
       How big the volume attached to the runner VM should be.
     type: string
+  runner_ssh_key_rsa_private:
+    description: >
+      Preconfigured RSA host private key
+    type: string
+    default: ''
+  runner_ssh_key_rsa_public:
+    description: >
+      Preconfigured RSA host public key
+    type: string
+    default: ''
+  runner_ssh_key_ecdsa_private:
+    description: >
+      Preconfigured ECDSA host private key
+    type: string
+    default: ''
+  runner_ssh_key_ecdsa_public:
+    description: >
+      Preconfigured ECDSA host public key
+    type: string
+    default: ''
 
 resources:
+  cloud_config_ssh_keys:
+    # this resource demonstrates multiple cloud-config resources
+    # with a merge_how strategy
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        ssh_keys:
+          rsa_private: { get_param: runner_ssh_key_rsa_private }
+          rsa_public: { get_param: runner_ssh_key_rsa_public }
+          ecdsa_private: { get_param: runner_ssh_key_ecdsa_private }
+          ecdsa_public: { get_param: runner_ssh_key_ecdsa_public }
 
   runner_vm:
     type: OS::Nova::Server
@@ -51,6 +82,9 @@ resources:
       key_name: { get_param: key_name }
       security_groups:
         - { get_resource: secgroup_runner_vm }
+      user_data_format: RAW
+      user_data:
+        get_resource: cloud_config_ssh_keys
 
   secgroup_runner_vm:
     type: OS::Neutron::SecurityGroup
