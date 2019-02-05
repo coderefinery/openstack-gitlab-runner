@@ -43,15 +43,19 @@
 - hosts: runner
   become: True
   tasks:
-    - name: create /dev/shm/secret
+    - name: create directories for secrets
       file:
-        path: /dev/shm/secret
+        path: "{{ item.dest | dirname }}"
         state: directory
+      with_items:
+        - dest: "/dev/shm/secret/"
+        - "{{ runner_secrets|default([]) }}"
+      when: item.dest is defined
 
     - name: initialize secrets in /dev/shm/secret
       copy:
         src: "{{ item.src|default('/dev/shm/secret/' + item.name) }}"
-        dest: "/dev/shm/secret/{{ item.name }}"
+        dest: "{{ item.dest|default('/dev/shm/secret/' + item.name) }}"
         mode: "{{ item.mode|default(omit) }}"
         owner: "{{ item.owner|default(omit) }}"
         group: "{{ item.group|default(omit) }}"
